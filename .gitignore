@@ -1,0 +1,26 @@
+# Segredos e ambiente
+.env
+.env.local
+.env.*.local
+
+# Dependências e build
+node_modules/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Ferramentas
+.claude/
+
+# Certificados TLS (nunca versionar chaves privadas)
+certs/*.pem
+certs/*.crt
+certs/*.key
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+Reports/
