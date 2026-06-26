@@ -19,7 +19,7 @@ O acesso é protegido por autenticação _passwordless_ via OTP enviado por e-ma
 - [Autenticação — como funciona](#autenticação--como-funciona)
 - [Segurança](#segurança)
 - [Configuração avançada](#configuração-avançada)
-- [HTTPS](#https)
+- [Portas e HTTPS](#portas-e-https)
 
 ---
 
@@ -55,7 +55,7 @@ O acesso é protegido por autenticação _passwordless_ via OTP enviado por e-ma
 │  ┌──────────┐     ┌──────────────┐    ┌──────────────┐  │
 │  │ frontend │     │   backend    │    │   mailhog    │  │
 │  │  Nginx   │────▶│  Node.js     │    │ (SMTP + UI)  │  │
-│  │  porta 80│     │  porta 3001  │    │  porta 8025  │  │
+│  │  80/443  │     │  porta 3001  │    │  porta 8025  │  │
 │  └──────────┘     └──────┬───────┘    └──────────────┘  │
 │                          │                              │
 │               ┌──────────┴──────────┐                   │
@@ -130,6 +130,8 @@ docker compose up --build
 |--------------------------|------------------------------------------|
 | `http://localhost`       | Plataforma (login → relatórios)          |
 | `http://localhost:8025`  | MailHog — visualizar e-mails de OTP      |
+
+> As portas HTTP e HTTPS podem ser alteradas via `HTTP_PORT` e `HTTPS_PORT` no `.env` — veja [Portas e HTTPS](#portas-e-https).
 
 ### 4. Adicionar o primeiro usuário e promovê-lo a admin
 
@@ -661,6 +663,9 @@ Usuário              Frontend              Backend              Banco/Redis
 | `OTP_VERIFY_IP_WINDOW_SECONDS` | `300` | Janela para o limite acima (5 minutos) |
 | `RATE_LIMIT_BLOCK_SECONDS` | `900` | Duração do bloqueio por IP (15 minutos) |
 | `COOKIE_SECURE` | `false` | Habilita flag `Secure` no cookie de sessão — definir `true` ao usar HTTPS |
+| `HTTP_PORT` | `80` | Porta do host mapeada para HTTP |
+| `HTTPS_PORT` | `443` | Porta do host mapeada para HTTPS |
+| `HTTPS_ENABLED` | `false` | Ativa o Nginx em modo HTTPS — exige `certs/cert.pem` e `certs/key.pem` |
 
 ### Gerar segredos seguros para produção
 
@@ -710,13 +715,34 @@ EMAIL_FROM=seu@gmail.com
 
 ---
 
-## HTTPS
+## Portas e HTTPS
 
-O Nginx já está configurado para TLS. Basta fornecer os certificados e ativar o flag no cookie.
+### Portas customizadas
+
+Por padrão o sistema escuta nas portas padrão (80/HTTP e 443/HTTPS). Para usar outras portas, defina no `.env`:
+
+```env
+HTTP_PORT=8080
+HTTPS_PORT=8443
+```
+
+E reinicie:
+
+```bash
+docker compose up -d
+```
+
+Não é necessário rebuild — a mudança de porta é apenas no mapeamento do Docker.
+
+---
+
+### HTTPS
+
+O Nginx já está configurado para TLS. Basta fornecer os certificados e configurar o `.env`.
 
 ### Como funciona
 
-- Porta **80** redireciona automaticamente para **443** (`301 Moved Permanently`)
+- Porta `HTTP_PORT` redireciona automaticamente para `HTTPS_PORT` (`301 Moved Permanently`)
 - TLS 1.2 e 1.3 apenas; cifras modernas (ECDHE/ChaCha20)
 - HSTS habilitado (`max-age=31536000; includeSubDomains`) — após a primeira visita, o browser força HTTPS
 - Certificados lidos de `./certs/cert.pem` e `./certs/key.pem` (montados como volume read-only no container)
@@ -810,34 +836,30 @@ sudo crontab -e
 
 ### Ativar e subir
 
-Após gerar os certificados com qualquer uma das opções acima, siga os três passos:
+Após gerar os certificados com qualquer uma das opções acima, siga os passos:
 
-**1. Substituir o Nginx config pelo arquivo HTTPS:**
-
-```bash
-cp frontend/nginx.conf.https frontend/nginx.conf
-```
-
-**2. Atualizar o `.env`:**
+**1. Atualizar o `.env`:**
 
 ```env
+HTTPS_ENABLED=true
+HTTPS_PORT=443        # ou outra porta desejada
 COOKIE_SECURE=true
 ```
 
-**3. Rebuild e subir:**
+**2. Subir (sem rebuild):**
 
 ```bash
-docker compose up --build frontend backend -d
+docker compose up -d
 ```
 
-**4. Verificar:**
+**3. Verificar:**
 
 ```bash
 # Testar redirect HTTP → HTTPS
 curl -I http://localhost
 
 # Testar HTTPS (--insecure apenas para self-signed)
-curl -I --insecure https://localhost
+curl -Ik https://localhost
 
 # Inspecionar o certificado
 openssl s_client -connect localhost:443 -brief
@@ -847,19 +869,14 @@ openssl s_client -connect localhost:443 -brief
 
 ### Reverter para HTTP
 
-```bash
-# Restaurar o nginx.conf padrão (HTTP)
-git checkout frontend/nginx.conf
-# ou manualmente copiar de volta o conteúdo HTTP-only
-```
-
 ```env
 # No .env
+HTTPS_ENABLED=false
 COOKIE_SECURE=false
 ```
 
 ```bash
-docker compose up --build frontend -d
+docker compose up -d
 ```
 
-> **Importante:** nunca suba o sistema com `nginx.conf.https` ativo sem ter os arquivos `certs/cert.pem` e `certs/key.pem` presentes — o Nginx não inicia e o container fica em crash loop.
+> **Importante:** com `HTTPS_ENABLED=true`, o Nginx exige os arquivos `certs/cert.pem` e `certs/key.pem` — sem eles o container não inicia.
