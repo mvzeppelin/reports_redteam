@@ -1,6 +1,8 @@
+name: reports_redteam
+
 services:
   frontend:
-    image: sistema_auth-frontend
+    image: reports_redteam-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -15,7 +17,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: sistema_auth-backend
+    image: reports_redteam-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
