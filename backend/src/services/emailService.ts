@@ -1,6 +1,35 @@
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
+import nodeFetch from 'node-fetch';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { config } from '../config';
+
+if (config.proxy) {
+  const proxyUrl = new URL(config.proxy);
+
+  if (config.proxyInsecure) {
+    // Desabilita verificação TLS globalmente no processo — necessário quando o proxy
+    // intercepta HTTPS e apresenta seu próprio certificado (ex: Burp Suite MITM).
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  }
+
+  const agent = new HttpsProxyAgent({
+    host: proxyUrl.hostname,
+    port: Number(proxyUrl.port) || 8080,
+    protocol: proxyUrl.protocol,  // 'http:' evita TLS desnecessário na conexão com o proxy
+  });
+
+  (globalThis as any).fetch = async (url: any, init?: any) => {
+    try {
+      return await nodeFetch(url, { ...init, agent });
+    } catch (err: any) {
+      console.error('[email] fetch error:', String(url), err?.message ?? err);
+      throw err;
+    }
+  };
+
+  console.log(`[email] proxy configurado: ${config.proxy}${config.proxyInsecure ? ' (TLS não verificado)' : ''}`);
+}
 
 let smtpTransporter: nodemailer.Transporter | null = null;
 let resendClient: Resend | null = null;
@@ -68,8 +97,10 @@ export async function sendOTPEmail(to: string, otp: string, expiresInMinutes: nu
     const client = getResendClient();
     const result = await client.emails.send({ from, to, subject, html, text });
     if (result.error) {
+      console.error('[email] resend erro:', result.error);
       throw new Error(`Resend: ${result.error.message}`);
     }
+    console.log(`[email] resend enviado id=${result.data?.id}`);
     return;
   }
 

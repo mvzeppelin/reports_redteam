@@ -649,6 +649,8 @@ Usuário              Frontend              Backend              Banco/Redis
 | `EMAIL_FROM` | `noreply@auth.local` | Endereço remetente (domínio verificado no Resend em produção) |
 | `EMAIL_FROM_NAME` | — | Nome exibido no campo "De:" — ex: `Portal Red Team` |
 | `RESEND_API_KEY` | — | Chave da API Resend (obrigatório quando `EMAIL_PROVIDER=resend`) |
+| `HTTP_PROXY` | — | Proxy de saída para chamadas do Resend (opcional) — ex: `http://192.168.15.4:8080` |
+| `PROXY_INSECURE` | `false` | Desabilita verificação TLS no proxy — necessário quando o proxy intercepta HTTPS (ex: Burp Suite). **Apenas dev/teste.** |
 | `SMTP_HOST` | `mailhog` | Host SMTP (usado quando `EMAIL_PROVIDER=smtp`) |
 | `SMTP_PORT` | `1025` | Porta SMTP |
 | `SMTP_SECURE` | `false` | TLS (`true` para porta 465) |
@@ -691,6 +693,31 @@ EMAIL_FROM_NAME=Portal Red Team
 ```
 
 > Sem domínio verificado, use `onboarding@resend.dev` — apenas o e-mail dono da conta receberá mensagens (só para testes).
+
+#### Proxy de saída para o Resend
+
+O proxy é **opcional** — o backend consegue chegar em `api.resend.com` diretamente. Use quando quiser rotear o tráfego do Resend por um proxy (inspeção, auditoria ou restrição de rede).
+
+O proxy é aplicado exclusivamente às chamadas do Resend. Conexões com PostgreSQL, Redis e SMTP usam TCP direto e não são afetadas.
+
+**Cenário 1 — Proxy transparente** (Squid, nginx, corporativo):
+
+```env
+HTTP_PROXY=http://192.168.15.4:8080
+```
+
+O proxy repassa o túnel CONNECT sem interceptar o TLS — verificação de certificado permanece ativa.
+
+**Cenário 2 — Proxy com inspeção TLS** (Burp Suite, mitmproxy — apenas dev/teste):
+
+```env
+HTTP_PROXY=http://192.168.15.4:8080
+PROXY_INSECURE=true
+```
+
+O proxy apresenta seu próprio certificado no lugar do `api.resend.com` (MITM). `PROXY_INSECURE=true` desabilita a verificação TLS para aceitar esse certificado. **Não usar em produção.**
+
+> Se o proxy exigir autenticação: `HTTP_PROXY=http://usuario:senha@host:porta`
 
 #### Opção 2 — SMTP com Gmail
 

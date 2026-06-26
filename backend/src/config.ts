@@ -47,6 +47,9 @@ export const config = {
     },
   },
 
+  proxy: process.env.HTTP_PROXY || process.env.HTTPS_PROXY || undefined,
+  proxyInsecure: process.env.PROXY_INSECURE === 'true',
+
   rateLimit: {
     otpRequest: {
       ipMax: intEnv('OTP_REQUEST_IP_MAX', 10),
