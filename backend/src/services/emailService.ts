@@ -40,6 +40,8 @@ function getSmtpTransporter(): nodemailer.Transporter {
       host: config.email.smtp.host,
       port: config.email.smtp.port,
       secure: config.email.smtp.secure,
+      ignoreTLS: config.email.smtp.ignoreTLS,
+      tls: { rejectUnauthorized: config.email.smtp.tlsRejectUnauthorized },
       auth: config.email.smtp.user
         ? { user: config.email.smtp.user, pass: config.email.smtp.pass }
         : undefined,

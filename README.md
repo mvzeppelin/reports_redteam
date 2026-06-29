@@ -656,6 +656,8 @@ Usuário              Frontend              Backend              Banco/Redis
 | `SMTP_SECURE` | `false` | TLS (`true` para porta 465) |
 | `SMTP_USER` | — | Usuário SMTP (opcional) |
 | `SMTP_PASS` | — | Senha SMTP (opcional) |
+| `SMTP_IGNORE_TLS` | `false` | Ignora STARTTLS — necessário em servidores internos que não suportam TLS |
+| `SMTP_TLS_REJECT_UNAUTHORIZED` | `true` | Aceitar certificados TLS inválidos/auto-assinados — definir `false` apenas em ambientes internos |
 | `OTP_DURATION_SECONDS` | `300` | Validade do OTP (5 minutos) |
 | `OTP_COOLDOWN_SECONDS` | `180` | Cooldown por e-mail (3 minutos) |
 | `SESSION_DURATION_SECONDS` | `86400` | Duração da sessão (24 horas) |

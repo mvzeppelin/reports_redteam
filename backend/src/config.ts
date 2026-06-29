@@ -44,6 +44,8 @@ export const config = {
       secure: process.env.SMTP_SECURE === 'true',
       user: process.env.SMTP_USER || undefined,
       pass: process.env.SMTP_PASS || undefined,
+      ignoreTLS: process.env.SMTP_IGNORE_TLS === 'true',
+      tlsRejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
     },
   },
 
