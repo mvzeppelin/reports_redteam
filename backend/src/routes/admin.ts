@@ -11,9 +11,10 @@ router.use(authenticate, requireAdmin);
 
 router.get('/users', async (_req, res) => {
   const { rows } = await pool.query(
-    `SELECT id, email, is_active, is_admin, created_at
-     FROM users
-     ORDER BY created_at DESC`,
+    `SELECT u.id, u.email, u.is_active, u.is_admin, u.created_at,
+            (SELECT MAX(s.created_at) FROM sessions s WHERE s.user_id = u.id) AS last_login
+     FROM users u
+     ORDER BY u.created_at DESC`,
   );
   res.json(rows);
 });

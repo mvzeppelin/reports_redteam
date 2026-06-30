@@ -112,6 +112,7 @@ export default function UsersPage({ currentUserId }: Props) {
                 <th>Status</th>
                 <th>Admin</th>
                 <th>Criado em</th>
+                <th>Último login</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -134,6 +135,11 @@ export default function UsersPage({ currentUserId }: Props) {
                   </td>
                   <td className="admin-table__date">
                     {new Date(user.created_at).toLocaleString('pt-BR')}
+                  </td>
+                  <td className="admin-table__date">
+                    {user.last_login
+                      ? new Date(user.last_login).toLocaleString('pt-BR')
+                      : <span style={{ color: 'var(--color-text-muted, #999)' }}>Nunca</span>}
                   </td>
                   <td className="admin-table__actions">
                     <button

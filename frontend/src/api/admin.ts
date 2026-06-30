@@ -34,6 +34,7 @@ export interface AdminUser {
   is_active: boolean;
   is_admin: boolean;
   created_at: string;
+  last_login: string | null;
 }
 
 export interface AdminSession {
