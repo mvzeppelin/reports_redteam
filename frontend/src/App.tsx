@@ -56,6 +56,7 @@ export default function App() {
   }
 
   const isAdmin = user?.isAdmin === true;
+  const userRole = user?.role ?? 'report';
 
   return (
     <BrowserRouter>
@@ -106,7 +107,7 @@ export default function App() {
           element={
             authState !== 'authenticated'
               ? <Navigate to="/" replace />
-              : <ReportsPage onLogout={handleLogout} isAdmin={isAdmin} />
+              : <ReportsPage onLogout={handleLogout} role={userRole} />
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />

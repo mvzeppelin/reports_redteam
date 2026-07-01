@@ -34,10 +34,13 @@ export interface RequestOTPResponse {
   expiresInSeconds?: number;
 }
 
+export type UserRole = 'admin' | 'redteam' | 'report';
+
 export interface MeResponse {
   email: string;
   expiresAt: string;
   isAdmin: boolean;
+  role: UserRole;
 }
 
 export async function requestOTP(email: string): Promise<RequestOTPResponse> {

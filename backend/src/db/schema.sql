@@ -17,6 +17,16 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='users' AND column_name='role'
+  ) THEN
+    ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'redteam';
+    UPDATE users SET role = 'admin' WHERE is_admin = TRUE;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- ─── Códigos OTP ──────────────────────────────────────────────────────────────

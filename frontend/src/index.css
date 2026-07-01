@@ -552,6 +552,7 @@ input::placeholder {
 .admin-badge--red    { background: #fee2e2; color: #dc2626; }
 .admin-badge--gray   { background: #f3f4f6; color: #6b7280; }
 .admin-badge--blue   { background: #dbeafe; color: #1d4ed8; }
+.admin-badge--orange { background: #ffedd5; color: #c2410c; }
 .admin-badge--you    { background: #fef9c3; color: #92400e; }
 
 /* ─── Admin JSON ────────────────────────────────────────────────────────────── */

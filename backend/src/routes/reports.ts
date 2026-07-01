@@ -6,6 +6,7 @@ import multer from 'multer';
 import mime from 'mime-types';
 import { pool } from '../db/pool';
 import { authenticate } from '../middleware/authenticate';
+import { requireRedteam } from '../middleware/requireRedteam';
 import { reportUploadRateLimiter } from '../middleware/rateLimiter';
 import { extractReport, deleteReportFiles, REPORTS_DIR } from '../services/reportService';
 import { logEvent } from '../services/auditService';
@@ -51,7 +52,7 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 // ─── POST /api/reports ────────────────────────────────────────────────────────
-router.post('/', reportUploadRateLimiter, async (req: Request, res: Response) => {
+router.post('/', requireRedteam, reportUploadRateLimiter, async (req: Request, res: Response) => {
   // Multer tratado aqui para devolver 400 em vez de 500 em erros de validação.
   try {
     await runUpload(req, res);
@@ -126,7 +127,7 @@ router.post('/', reportUploadRateLimiter, async (req: Request, res: Response) =>
 });
 
 // ─── PATCH /api/reports/:id ───────────────────────────────────────────────────
-router.patch('/:id', async (req: Request, res: Response) => {
+router.patch('/:id', requireRedteam, async (req: Request, res: Response) => {
   const { id } = req.params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) {
     res.status(400).json({ error: 'ID inválido.' });
@@ -183,7 +184,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
 });
 
 // ─── DELETE /api/reports/:id ──────────────────────────────────────────────────
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireRedteam, async (req: Request, res: Response) => {
   const { id } = req.params;
   // Validar formato UUID para evitar path traversal no id
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) {

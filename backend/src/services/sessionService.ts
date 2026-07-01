@@ -13,10 +13,13 @@ function hashToken(token: string): string {
     .digest('hex');
 }
 
+export type UserRole = 'admin' | 'redteam' | 'report';
+
 export interface Session {
   userId: number;
   email: string;
   expiresAt: Date;
+  role: UserRole;
   isAdmin: boolean;
 }
 
@@ -56,8 +59,8 @@ export async function createSession(userId: number): Promise<string> {
 export async function validateSession(token: string): Promise<Session | null> {
   const tokenHash = hashToken(token);
 
-  const { rows } = await pool.query<{ user_id: number; email: string; expires_at: Date; is_admin: boolean }>(
-    `SELECT s.user_id, u.email, s.expires_at, u.is_admin
+  const { rows } = await pool.query<{ user_id: number; email: string; expires_at: Date; role: UserRole }>(
+    `SELECT s.user_id, u.email, s.expires_at, u.role
      FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = $1
@@ -73,7 +76,8 @@ export async function validateSession(token: string): Promise<Session | null> {
     userId: rows[0].user_id,
     email: rows[0].email,
     expiresAt: rows[0].expires_at,
-    isAdmin: rows[0].is_admin,
+    role: rows[0].role,
+    isAdmin: rows[0].role === 'admin',
   };
 }
 

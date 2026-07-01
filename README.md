@@ -140,9 +140,9 @@ docker compose up --build
 docker compose exec postgres psql -U auth_user -d auth_db \
   -c "INSERT INTO users (email) VALUES ('seu@email.com') ON CONFLICT DO NOTHING;"
 
-# Promover a admin
+# Definir perfil (admin | redteam | report)
 docker compose exec postgres psql -U auth_user -d auth_db \
-  -c "UPDATE users SET is_admin = TRUE WHERE email = 'seu@email.com';"
+  -c "UPDATE users SET role = 'admin' WHERE email = 'seu@email.com';"
 ```
 
 ### 5. Parar os serviços
@@ -245,21 +245,21 @@ ORDER BY r.created_at DESC;
 
 ## Painel administrativo
 
-Usuários com `is_admin = TRUE` acessam o painel pelo botão **"Painel Administrativo"** na tela de boas-vindas.
+Usuários com `role = 'admin'` acessam o painel pelo botão **"Painel Administrativo"** na tela de boas-vindas.
 
 ### Abas do painel
 
 | Aba                | O que permite                                                                          |
 |--------------------|----------------------------------------------------------------------------------------|
-| **Usuários**       | Criar, ativar/desativar, promover/revogar admin e excluir usuários                     |
+| **Usuários**       | Criar, ativar/desativar, alterar perfil e excluir usuários                             |
 | **Sessões Ativas** | Listar todas as sessões autenticadas em tempo real e invalidá-las individualmente       |
 | **Histórico**      | Log de auditoria paginado com filtros por evento, e-mail e IP                          |
 
 ### Controles de acesso do painel
 
-- Usuários sem `is_admin` não veem o botão e recebem `403` em qualquer tentativa de acesso a `/admin/*`
-- O painel exibe **(você)** ao lado da conta logada e desabilita ações destrutivas sobre ela (excluir, desativar, revogar admin)
-- Um admin não pode revogar seu próprio acesso pelo painel — apenas via banco ou por outro administrador
+- Apenas `role = 'admin'` vê o botão e tem acesso a `/admin/*`; demais recebem `403`
+- O painel exibe **(você)** ao lado da conta logada e desabilita ações destrutivas sobre ela (excluir, desativar, rebaixar perfil)
+- Um admin não pode rebaixar seu próprio perfil pelo painel — apenas via banco ou por outro administrador
 
 ---
 
@@ -277,7 +277,7 @@ docker compose exec postgres psql -U auth_user -d auth_db
 
 **Listar todos os usuários:**
 ```sql
-SELECT id, email, is_active, is_admin, created_at
+SELECT id, email, is_active, role, created_at
 FROM users
 ORDER BY created_at DESC;
 ```
@@ -314,24 +314,40 @@ DELETE FROM users WHERE email = 'usuario@email.com';
 
 ---
 
-### Administradores
+### Perfis de usuário
 
-**Promover a administrador** (o usuário precisa existir antes):
+Os perfis disponíveis são `admin`, `redteam` e `report`. O padrão para novos usuários é `redteam`.
+
+| Perfil | Relatórios | Usuários |
+|--------|-----------|----------|
+| `admin` | upload, editar, ativar/desativar, remover, visualizar | acesso total ao painel |
+| `redteam` | upload, editar, ativar/desativar, remover, visualizar | sem acesso |
+| `report` | somente visualizar relatórios ativos | sem acesso |
+
+**Alterar o perfil de um usuário:**
 ```bash
 docker compose exec postgres psql -U auth_user -d auth_db \
-  -c "UPDATE users SET is_admin = TRUE WHERE email = 'seu@email.com';"
+  -c "UPDATE users SET role = 'admin' WHERE email = 'seu@email.com';"
 ```
 
-**Revogar acesso de administrador:**
 ```sql
-UPDATE users SET is_admin = FALSE WHERE email = 'usuario@email.com';
+-- outros exemplos
+UPDATE users SET role = 'redteam' WHERE email = 'usuario@email.com';
+UPDATE users SET role = 'report'  WHERE email = 'usuario@email.com';
 ```
 
-**Listar todos os admins:**
+**Listar usuários por perfil:**
+```sql
+SELECT email, is_active, role, created_at
+FROM users
+ORDER BY role, email;
+```
+
+**Listar apenas administradores:**
 ```sql
 SELECT email, is_active, created_at
 FROM users
-WHERE is_admin = TRUE;
+WHERE role = 'admin';
 ```
 
 ---

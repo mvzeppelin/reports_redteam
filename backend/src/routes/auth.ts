@@ -157,6 +157,7 @@ authRouter.get('/me', authenticate, (req: Request, res: Response) => {
     email: req.session!.email,
     expiresAt: req.session!.expiresAt,
     isAdmin: req.session!.isAdmin,
+    role: req.session!.role,
   });
 });
 

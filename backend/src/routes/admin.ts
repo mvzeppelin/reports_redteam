@@ -11,7 +11,7 @@ router.use(authenticate, requireAdmin);
 
 router.get('/users', async (_req, res) => {
   const { rows } = await pool.query(
-    `SELECT u.id, u.email, u.is_active, u.is_admin, u.created_at,
+    `SELECT u.id, u.email, u.is_active, u.role, u.created_at,
             (SELECT MAX(s.created_at) FROM sessions s WHERE s.user_id = u.id) AS last_login
      FROM users u
      ORDER BY u.created_at DESC`,
@@ -28,7 +28,7 @@ router.post('/users', async (req, res) => {
   const normalized = email.trim().toLowerCase();
   try {
     const { rows } = await pool.query(
-      `INSERT INTO users (email) VALUES ($1) RETURNING id, email, is_active, is_admin, created_at`,
+      `INSERT INTO users (email) VALUES ($1) RETURNING id, email, is_active, role, created_at`,
       [normalized],
     );
     await logEvent('ADMIN_USER_CREATED', req.ip ?? null, req.session!.email, {
@@ -49,15 +49,20 @@ router.patch('/users/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return; }
 
-  const { is_active, is_admin } = req.body;
-  if (is_active === undefined && is_admin === undefined) {
+  const { is_active, role } = req.body;
+  if (is_active === undefined && role === undefined) {
     res.status(400).json({ error: 'Nenhum campo para atualizar' });
     return;
   }
 
+  if (role !== undefined && !['admin', 'redteam', 'report'].includes(role)) {
+    res.status(400).json({ error: 'Perfil inválido. Use: admin, redteam ou report' });
+    return;
+  }
+
   // Impede admin de revogar o próprio acesso
-  if (id === req.session!.userId && is_admin === false) {
-    res.status(400).json({ error: 'Você não pode revogar seu próprio acesso de administrador' });
+  if (id === req.session!.userId && role !== undefined && role !== 'admin') {
+    res.status(400).json({ error: 'Você não pode rebaixar seu próprio perfil de administrador' });
     return;
   }
   if (id === req.session!.userId && is_active === false) {
@@ -69,18 +74,18 @@ router.patch('/users/:id', async (req, res) => {
   const values: unknown[] = [];
   let idx = 1;
   if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
-  if (is_admin !== undefined)  { fields.push(`is_admin = $${idx++}`);  values.push(is_admin);  }
+  if (role !== undefined)      { fields.push(`role = $${idx++}`);      values.push(role); }
   values.push(id);
 
   const { rows } = await pool.query(
-    `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, email, is_active, is_admin, created_at`,
+    `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, email, is_active, role, created_at`,
     values,
   );
   if (rows.length === 0) { res.status(404).json({ error: 'Usuário não encontrado' }); return; }
   await logEvent('ADMIN_USER_UPDATED', req.ip ?? null, req.session!.email, {
     targetEmail: rows[0].email,
     targetId: id,
-    changes: { is_active, is_admin },
+    changes: { is_active, role },
   });
   res.json(rows[0]);
 });

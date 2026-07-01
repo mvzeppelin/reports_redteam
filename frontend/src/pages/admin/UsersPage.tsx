@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listUsers, createUser, updateUser, deleteUser, AdminUser } from '../../api/admin';
+import { listUsers, createUser, updateUser, deleteUser, AdminUser, UserRole } from '../../api/admin';
 
 interface Props {
   currentUserId: string;
@@ -53,10 +53,10 @@ export default function UsersPage({ currentUserId }: Props) {
     }
   }
 
-  async function handleToggleAdmin(user: AdminUser) {
+  async function handleRoleChange(user: AdminUser, role: UserRole) {
     setActionError('');
     try {
-      const updated = await updateUser(user.id, { is_admin: !user.is_admin });
+      const updated = await updateUser(user.id, { role });
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     } catch (e: any) {
       setActionError(e.message);
@@ -110,7 +110,7 @@ export default function UsersPage({ currentUserId }: Props) {
               <tr>
                 <th>E-mail</th>
                 <th>Status</th>
-                <th>Admin</th>
+                <th>Perfil</th>
                 <th>Criado em</th>
                 <th>Último login</th>
                 <th>Ações</th>
@@ -129,8 +129,12 @@ export default function UsersPage({ currentUserId }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className={`admin-badge ${user.is_admin ? 'admin-badge--blue' : 'admin-badge--gray'}`}>
-                      {user.is_admin ? 'Sim' : 'Não'}
+                    <span className={`admin-badge ${
+                      user.role === 'admin'   ? 'admin-badge--blue'
+                      : user.role === 'redteam' ? 'admin-badge--orange'
+                      : 'admin-badge--gray'
+                    }`}>
+                      {user.role}
                     </span>
                   </td>
                   <td className="admin-table__date">
@@ -150,14 +154,18 @@ export default function UsersPage({ currentUserId }: Props) {
                     >
                       {user.is_active ? 'Desativar' : 'Ativar'}
                     </button>
-                    <button
-                      className="btn btn--ghost btn--sm"
-                      onClick={() => handleToggleAdmin(user)}
+                    <select
+                      className="input input--sm"
+                      style={{ padding: '2px 6px', fontSize: 12, width: 'auto' }}
+                      value={user.role}
                       disabled={isSelf(user)}
-                      title={isSelf(user) ? 'Não pode alterar sua própria conta' : ''}
+                      title={isSelf(user) ? 'Não pode alterar seu próprio perfil' : 'Alterar perfil'}
+                      onChange={(e) => handleRoleChange(user, e.target.value as UserRole)}
                     >
-                      {user.is_admin ? 'Revogar admin' : 'Tornar admin'}
-                    </button>
+                      <option value="admin">admin</option>
+                      <option value="redteam">redteam</option>
+                      <option value="report">report</option>
+                    </select>
                     <button
                       className="btn btn--danger btn--sm"
                       onClick={() => handleDelete(user)}

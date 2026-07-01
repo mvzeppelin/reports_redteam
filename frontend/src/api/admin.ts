@@ -28,11 +28,13 @@ async function apiFetchEmpty(path: string, options?: RequestInit): Promise<void>
   }
 }
 
+export type UserRole = 'admin' | 'redteam' | 'report';
+
 export interface AdminUser {
   id: number;
   email: string;
   is_active: boolean;
-  is_admin: boolean;
+  role: UserRole;
   created_at: string;
   last_login: string | null;
 }
@@ -70,7 +72,7 @@ export function createUser(email: string): Promise<AdminUser> {
   return apiFetch<AdminUser>('/users', { method: 'POST', body: JSON.stringify({ email }) });
 }
 
-export function updateUser(id: number, patch: { is_active?: boolean; is_admin?: boolean }): Promise<AdminUser> {
+export function updateUser(id: number, patch: { is_active?: boolean; role?: UserRole }): Promise<AdminUser> {
   return apiFetch<AdminUser>(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../api/auth';
+import { logout, UserRole } from '../api/auth';
 import {
   listReports, uploadReport, toggleReport, renameReport, deleteReport,
   reportViewUrl, formatBytes, Report,
@@ -8,10 +8,12 @@ import {
 
 interface Props {
   onLogout: () => void;
-  isAdmin: boolean;
+  role: UserRole;
 }
 
-export default function ReportsPage({ onLogout, isAdmin }: Props) {
+export default function ReportsPage({ onLogout, role }: Props) {
+  const isAdmin   = role === 'admin';
+  const canEdit   = role === 'admin' || role === 'redteam';
   const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,8 +143,8 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
           <span className="admin-page__count">{reports.length} relatório{reports.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Upload form */}
-        <div className="card" style={{ padding: '24px 28px' }}>
+        {/* Upload form — apenas redteam e admin */}
+        {canEdit && <div className="card" style={{ padding: '24px 28px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#1a1a2e' }}>Novo Relatório</h2>
           <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <input
@@ -216,7 +218,7 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
               {uploading ? <><span className="spinner" /> Enviando...</> : 'Fazer upload'}
             </button>
           </form>
-        </div>
+        </div>}
 
         {/* Action error */}
         {actionError && <div className="alert alert--error">{actionError}</div>}
@@ -225,8 +227,8 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
         <div className="alert alert--warning" style={{ fontSize: 13 }}>
           <strong>Atenção:</strong> abra apenas relatórios de fontes confiáveis. O conteúdo HTML é renderizado
           no seu browser — um relatório malicioso pode executar scripts no contexto da sua sessão.
-          {isAdmin && (
-            <> Como <strong>administrador</strong>, o risco é maior: evite abrir relatórios enviados por terceiros sem revisão prévia.</>
+          {canEdit && (
+            <> Como <strong>{isAdmin ? 'administrador' : 'redteam'}</strong>, o risco é maior: evite abrir relatórios enviados por terceiros sem revisão prévia.</>
           )}
         </div>
 
@@ -255,7 +257,7 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
                 {reports.map((report) => (
                   <tr key={report.id} className={!report.is_active ? 'admin-table__row--inactive' : ''}>
                     <td>
-                      {editingId === report.id ? (
+                      {canEdit && editingId === report.id ? (
                         <input
                           type="text"
                           className="input input--sm"
@@ -273,14 +275,16 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontWeight: 600 }}>{report.name}</span>
-                          <button
-                            className="btn btn--ghost btn--sm"
-                            style={{ margin: 0, padding: '2px 8px', fontSize: 12, flexShrink: 0 }}
-                            onClick={() => startEdit(report)}
-                            title="Editar nome"
-                          >
-                            ✏️
-                          </button>
+                          {canEdit && (
+                            <button
+                              className="btn btn--ghost btn--sm"
+                              style={{ margin: 0, padding: '2px 8px', fontSize: 12, flexShrink: 0 }}
+                              onClick={() => startEdit(report)}
+                              title="Editar nome"
+                            >
+                              ✏️
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
@@ -294,7 +298,7 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
                     <td style={{ fontSize: 12, color: '#6b7280' }}>{report.uploaded_by_email ?? '—'}</td>
                     <td className="admin-table__date">{new Date(report.created_at).toLocaleString('pt-BR')}</td>
                     <td className="admin-table__actions">
-                      {editingId === report.id ? (
+                      {canEdit && editingId === report.id ? (
                         <>
                           <button
                             className="btn btn--primary btn--sm"
@@ -324,20 +328,24 @@ export default function ReportsPage({ onLogout, isAdmin }: Props) {
                           >
                             Abrir
                           </button>
-                          <button
-                            className="btn btn--ghost btn--sm"
-                            style={{ margin: 0 }}
-                            onClick={() => handleToggle(report)}
-                          >
-                            {report.is_active ? 'Desativar' : 'Ativar'}
-                          </button>
-                          <button
-                            className="btn btn--danger btn--sm"
-                            style={{ margin: 0 }}
-                            onClick={() => handleDelete(report)}
-                          >
-                            Remover
-                          </button>
+                          {canEdit && (
+                            <>
+                              <button
+                                className="btn btn--ghost btn--sm"
+                                style={{ margin: 0 }}
+                                onClick={() => handleToggle(report)}
+                              >
+                                {report.is_active ? 'Desativar' : 'Ativar'}
+                              </button>
+                              <button
+                                className="btn btn--danger btn--sm"
+                                style={{ margin: 0 }}
+                                onClick={() => handleDelete(report)}
+                              >
+                                Remover
+                              </button>
+                            </>
+                          )}
                         </>
                       )}
                     </td>
