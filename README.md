@@ -137,11 +137,11 @@ docker compose up --build
 
 ```bash
 # Adicionar usuário
-docker compose exec postgres psql -U auth_user -d auth_db \
+docker compose exec postgres psql -U reports_redteam_user -d reports_redteam_db \
   -c "INSERT INTO users (email) VALUES ('seu@email.com') ON CONFLICT DO NOTHING;"
 
 # Definir perfil (admin | redteam | report)
-docker compose exec postgres psql -U auth_user -d auth_db \
+docker compose exec postgres psql -U reports_redteam_user -d reports_redteam_db \
   -c "UPDATE users SET role = 'admin' WHERE email = 'seu@email.com';"
 ```
 
@@ -199,7 +199,7 @@ docker compose down -v
 ### Gerenciar relatórios via banco
 
 ```bash
-docker compose exec postgres psql -U auth_user -d auth_db
+docker compose exec postgres psql -U reports_redteam_user -d reports_redteam_db
 ```
 
 **Listar todos os relatórios:**
@@ -268,7 +268,7 @@ Usuários com `role = 'admin'` acessam o painel pelo botão **"Painel Administra
 ### Conectar ao banco
 
 ```bash
-docker compose exec postgres psql -U auth_user -d auth_db
+docker compose exec postgres psql -U reports_redteam_user -d reports_redteam_db
 ```
 
 ---
@@ -326,7 +326,7 @@ Os perfis disponíveis são `admin`, `redteam` e `report`. O padrão para novos 
 
 **Alterar o perfil de um usuário:**
 ```bash
-docker compose exec postgres psql -U auth_user -d auth_db \
+docker compose exec postgres psql -U reports_redteam_user -d reports_redteam_db \
   -c "UPDATE users SET role = 'admin' WHERE email = 'seu@email.com';"
 ```
 
@@ -656,8 +656,8 @@ Usuário              Frontend              Backend              Banco/Redis
 
 | Variável | Padrão | Descrição |
 |----------|--------|-----------|
-| `POSTGRES_DB` | `auth_db` | Nome do banco de dados |
-| `POSTGRES_USER` | `auth_user` | Usuário do banco |
+| `POSTGRES_DB` | `reports_redteam_db` | Nome do banco de dados |
+| `POSTGRES_USER` | `reports_redteam_user` | Usuário do banco |
 | `POSTGRES_PASSWORD` | — | Senha do banco (**trocar em produção**) |
 | `OTP_SECRET` | — | Segredo HMAC do OTP (**trocar em produção**) |
 | `SESSION_SECRET` | — | Segredo HMAC do token de sessão (**trocar em produção**) |
